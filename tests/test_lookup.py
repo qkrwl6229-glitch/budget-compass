@@ -27,13 +27,17 @@ class LawFiles(unittest.TestCase):
         self.assertEqual([x["id"] for x in index], [s["id"] for s in sources])
         for meta in index:
             with self.subTest(law=meta["id"]):
-                text = (LAWS / f"{meta['id']}.md").read_text(encoding="utf-8")
-                heads = re.findall(r"^## (제\d+조(?:의\d+)?)", text, re.M)
-                self.assertEqual(len(heads), len(meta["articles"]))
+                d = LAWS / meta["id"]
+                files = [f for f in d.glob("*.md") if f.name not in ("index.md", "addenda.md") and ".prev-" not in f.name]
+                self.assertEqual(len(files), len(meta["articles"]))
                 self.assertRegex(meta["effective"], r"^\d{4}-\d{2}-\d{2}$")
                 self.assertTrue(meta["url"].startswith("https://www.law.go.kr/"))
-                self.assertIn(f"- 시행일: {meta['effective']}", text)
-                self.assertNotIn("부칙 <", text.split("\n## ", 1)[0])
+                self.assertIn(f"| 시행일 | {meta['effective']} |", (d / "index.md").read_text(encoding="utf-8"))
+                for f in files[:5]:
+                    head = f.read_text(encoding="utf-8").split("\n---\n")[0]
+                    for k in ("source_id", "document", "revision", "provisions", "effective_from",
+                              "effective_to", "retrieved_on", "official_url", "fixed_url", "scope"):
+                        self.assertIn(f"\n{k}: ", head, f"{f.name} 헤더에 {k} 없음")
 
 
 class Lookup(unittest.TestCase):
@@ -61,6 +65,11 @@ class Lookup(unittest.TestCase):
     def test_citation_metadata(self):
         out = self.check(["--law", "rnd-cost-standard", "--article", "21"], "과학기술정보통신부고시", "수집 ")
         self.assertRegex(out, r"시행 \d{4}-\d{2}-\d{2}")
+
+    def test_previous_snapshot(self):
+        out = self.check(["--law", "rnd-cost-standard", "--article", "25", "--prev"], "직전 판본", "2026-03-11")
+        self.assertIn("참여연구자만 참여하는 회의", out)
+        self.check(["--law", "rnd-cost-standard", "--article", "25의2"], "2026-06-11 부터 시행")
 
     def test_errors(self):
         self.check(["--law", "nope", "--article", "1"], "입력 오류", code=2)

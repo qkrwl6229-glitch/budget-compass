@@ -1,0 +1,14 @@
+{
+  "manuals": [
+    {
+      "id": "rcms-keit-user-manual",
+      "title": "RCMS 연구개발기관 사용자 매뉴얼",
+      "issuer": "한국산업기술기획평가원(KEIT)",
+      "version": "2023-12-19 작성 (176쪽)",
+      "posted": "2024-05-14",
+      "scope": "KEIT 관리 과제 기준. 화면·기능 근거이며 과제별 허용 근거 아님",
+      "url": "https://www.gaia.go.kr/download/04_01/RCMS_usr_manual.pdf",
+      "used_in": ["topics/rcms-vat.md", "topics/rcms-transfers.md", "topics/rd-equipment.md"]
+    }
+  ]
+}

@@ -6,7 +6,7 @@
 > 🔎 = 탐색 경로만 확인(판본 미확인). 의존하는 조항이 바뀌었거나 시행 예정이면 답변에서 따로 표시한다.
 
 ## 0. 수록 원문 먼저
-아래 규범 대부분은 `laws/` 에 조문 원문이 들어 있다. `python scripts/lookup.py --list` 로 수록 판본과 수집일을 보고, `lookup.py 낱말` 로 조문을 찾는다.
+아래 규범 대부분은 `laws/` 에 조문별 원문이 들어 있다. [index.md](index.md) → 주제 파일 → 조문 파일 순서로 읽는다. 수록 판본·수집일 목록은 `../laws/index.md`.
 이 표의 링크는 수록본 이후 개정 여부를 확인하거나, 수록되지 않은 조문(별표·서식·부칙)을 볼 때 쓴다.
 
 ## 1. 핵심 규범과 확인한 판본
@@ -17,7 +17,7 @@
 | 지방보조금 | [지방자치단체 보조금 관리에 관한 법률](https://www.law.go.kr/법령/지방자치단체보조금관리에관한법률) | 답변 시 확인 | 🔎 |
 | 〃 | [지방보조금 관리기준](https://www.law.go.kr/admRulLsInfoP.do?admRulSeq=2100000284062) | 행정안전부예규 제378호, 2026. 8. 18. 시행 | ✅ |
 | 국가R&D | [국가연구개발혁신법](https://www.law.go.kr/법령/국가연구개발혁신법) | 답변 시 확인 | 🔎 |
-| 〃 | [국가연구개발사업 연구개발비 사용 기준](https://www.law.go.kr/LSW/admRulInfoP.do?admRulSeq=2100000278740) | 과학기술정보통신부고시 제2026-38호, 2026. 5. 6. 시행. 주요 조문은 `60-rd-rcms.md` | ✅ |
+| 〃 | [국가연구개발사업 연구개발비 사용 기준](https://www.law.go.kr/LSW/admRulInfoP.do?admRulSeq=2100000278740) | 과학기술정보통신부고시 제2026-38호, 2026. 5. 6. 시행. 주요 조문은 `references/topics/` (rd-meeting·rd-equipment·rcms-vat 등) | ✅ |
 | 〃 | [국가연구개발 시설ㆍ장비의 관리 등에 관한 표준지침](https://www.law.go.kr/LSW/admRulLsInfoP.do?admRulSeq=2100000285744) | 과학기술정보통신부고시 제2026-59호, 2026. 9. 30. 시행 | ✅ |
 | 부가세 | [부가가치세법](https://www.law.go.kr/lsInfoP.do?lsId=001571) — [제29조 과세표준(에누리 제외)](https://www.law.go.kr/lsLinkCommonInfo.do?chrClsCd=010202&lsJoLnkSeq=1032155443), [제30조 세율](https://www.law.go.kr/LSW/lsLinkCommonInfo.do?chrClsCd=010202&lsJoLnkSeq=1031738701), [제39조 공제하지 아니하는 매입세액](https://www.law.go.kr/lsLinkCommonInfo.do?chrClsCd=010202&lsJoLnkSeq=1026642577) | 법률 제21065호, 2026. 1. 2. 시행 | ✅ |
 | 원천징수 | [소득세법 제129조 원천징수세율](https://www.law.go.kr/LSW/lsLinkCommonInfo.do?chrClsCd=010202&lsJoLnkSeq=1032207013) | 법률 제21221호, 2026. 7. 1. 시행. 원천징수대상 사업소득 100분의 3, 일용근로 100분의 6 원문 확인 | ✅ |

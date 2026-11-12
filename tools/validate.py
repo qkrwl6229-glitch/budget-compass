@@ -76,8 +76,9 @@ else:
         err("SKILL.md: description 없음")
 refs = set(re.findall(r"`((?:references|templates|scripts)/[\w./-]+)`", text))
 refs |= set(re.findall(r"python (scripts/[\w.]+)", text))
+refs |= set(re.findall(r"\]\(((?:references|templates|scripts)/[\w./-]+)\)", text))
 for r in sorted(refs):
-    if not (SKILL / r).is_file():
+    if not (SKILL / r).exists():
         err(f"SKILL.md: 가리키는 파일 없음 {r}")
 for f in sorted((SKILL / "references").glob("*.md")):
     if f"references/{f.name}" not in refs:
@@ -85,6 +86,7 @@ for f in sorted((SKILL / "references").glob("*.md")):
 
 laws_dir = SKILL / "laws"
 idx_path = laws_dir / "index.json"
+idx = []
 if not idx_path.is_file():
     err("laws/index.json 없음")
 else:
@@ -92,23 +94,61 @@ else:
     ids = [x.get("id") for x in idx]
     src_ids = [x["id"] for x in load_json(ROOT / "tools/law_sources.json").get("sources", [])]
     if ids != src_ids:
-        err(f"laws/index.json 과 tools/law_sources.json 의 규정 목록이 다름")
+        err("laws/index.json 과 tools/law_sources.json 의 규정 목록이 다름")
     for x in idx:
-        f = laws_dir / f"{x.get('id')}.md"
-        if not f.is_file():
-            err(f"laws/{x.get('id')}.md 없음")
-        for k in ("title", "number", "effective", "collected", "url", "articles"):
+        d = laws_dir / str(x.get("id"))
+        if not (d / "index.md").is_file():
+            err(f"laws/{x.get('id')}/index.md 없음")
+            continue
+        files = [f for f in d.glob("*.md") if f.name not in ("index.md", "addenda.md") and ".prev-" not in f.name]
+        if len(files) != len(x.get("articles", [])):
+            err(f"laws/{x.get('id')}: 조문 파일 수({len(files)})가 목록({len(x.get('articles', []))})과 다름")
+        for k in ("title", "number", "effective", "collected", "url", "fixed_url", "articles"):
             if not x.get(k):
                 err(f"laws/index.json {x.get('id')}: '{k}' 없음")
-    extra = {f.stem for f in laws_dir.glob("*.md")} - set(ids)
+    extra = {p.name for p in laws_dir.iterdir() if p.is_dir()} - set(ids)
     if extra:
-        err(f"index.json 에 없는 수록 파일: {sorted(extra)}")
-    if "scripts/lookup.py" not in refs:
-        err("SKILL.md 가 scripts/lookup.py 를 안내하지 않음")
+        err(f"index.json 에 없는 규정 폴더: {sorted(extra)}")
+
+# 마크다운 상대 링크가 모두 실제 파일을 가리키는지
+link_files = [SKILL / "SKILL.md", SKILL / "references/index.md", *(SKILL / "references/topics").glob("*.md"),
+              laws_dir / "index.md", *laws_dir.glob("*/index.md")]
+DOCTOR = PLUGIN / "skills/budget-compass-doctor"
+link_files += [DOCTOR / "SKILL.md", *(DOCTOR / "references").glob("*.md")]
+n_links = 0
+for f in link_files:
+    if not f.is_file():
+        err(f"파일 없음: {f.relative_to(ROOT)}")
+        continue
+    for t in re.findall(r"\]\(([^)#\s]+)\)", f.read_text(encoding="utf-8")):
+        if t.startswith(("http://", "https://")):
+            continue
+        n_links += 1
+        if not (f.parent / t).resolve().exists():
+            err(f"{f.relative_to(ROOT)}: 깨진 링크 {t}")
+for t in ("references/index.md",):
+    if f"]({t})" not in text:
+        err(f"SKILL.md 가 {t} 를 연결하지 않음")
+if not list((SKILL / "references/topics").glob("*.md")):
+    err("references/topics/ 비어 있음")
+
+# Doctor
+dtext = (DOCTOR / "SKILL.md").read_text(encoding="utf-8") if (DOCTOR / "SKILL.md").is_file() else ""
+dm = re.match(r"^---\n(.*?)\n---\n", dtext, re.S)
+if not dm or "name: budget-compass-doctor" not in dm.group(1):
+    err("budget-compass-doctor/SKILL.md frontmatter name 오류")
+rel = (DOCTOR / "references/installed-release.md")
+if rel.is_file():
+    pv = re.search(r'^package_version:\s*"?([\d.]+)"?', rel.read_text(encoding="utf-8"), re.M)
+    if not pv or pv.group(1) != m.get("version"):
+        err(f"installed-release.md package_version({pv.group(1) if pv else None}) ≠ plugin.json version({m.get('version')})")
+import subprocess
+if subprocess.run([sys.executable, str(ROOT / "tools/build_catalog.py"), "--check"], capture_output=True).returncode:
+    err("source-catalog.md 가 laws/index.json 과 다름 — python3 tools/build_catalog.py")
 
 if errors:
     print("검사 실패:")
     for e in errors:
         print(" -", e)
     sys.exit(1)
-print(f"검사 통과: {m.get('name')} v{m.get('version')} (참조 파일 {len(refs)}개, 수록 규정 {len(idx) if idx_path.is_file() else 0}개)")
+print(f"검사 통과: {m.get('name')} v{m.get('version')} (참조 {len(refs)}개, 수록 규정 {len(idx)}개, 상대 링크 {n_links}개)")

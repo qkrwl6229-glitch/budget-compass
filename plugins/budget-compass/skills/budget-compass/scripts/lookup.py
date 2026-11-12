@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """수록된 공통 규정(laws/)에서 조문을 찾는다 (Python 표준 라이브러리만 사용).
+코드를 실행할 수 없으면 references/index.md → laws/<id>/index.md → 조문 파일 순서로 직접 읽어도 된다.
 
   python lookup.py --list                                   # 수록 규정·판본·수집일
   python lookup.py 회의비 식비                                # 모든 낱말이 들어간 조문 (전체 규정)
   python lookup.py 회의비 식비 --law rnd-cost-standard        # 특정 규정 안에서
   python lookup.py --law vat-act --article 29                # 조문 번호로 (29의2, 103조의13 도 가능)
   python lookup.py 원천징수 --law income-tax-act --full      # 긴 조문도 전체 출력
+  python lookup.py --law rnd-cost-standard --article 25 --prev  # 직전 판본과 함께
 
 결과마다 문서명·조문·번호·시행일·수집일·원문 주소를 함께 출력한다.
 수록본은 수집일 기준 사본이므로, 답변에 인용하기 전에 원문 주소에서 이후 개정 여부를 확인한다.
@@ -53,15 +55,29 @@ def load_index():
     return {x["id"]: x for x in json.loads(p.read_text(encoding="utf-8"))["laws"]}
 
 
-def load_articles(law_id):
-    text = (LAWS / f"{law_id}.md").read_text(encoding="utf-8")
-    parts = re.split(r"^## ", text, flags=re.M)[1:]
+def load_articles(law_id, include_prev=False):
+    """laws/<id>/<조문>.md 를 읽는다. 직전 판본(*.prev-*.md)은 include_prev 일 때만."""
     arts = []
-    for part in parts:
-        head, _, body = part.partition("\n")
-        m = re.match(r"제(\d+)조(?:의(\d+))?", head)
-        key = (m.group(1) + (f"의{m.group(2)}" if m.group(2) else "")) if m else head
-        arts.append({"no": key, "head": head.strip(), "body": body.strip()})
+    for f in sorted((LAWS / law_id).glob("*.md")):
+        if f.name in ("index.md", "addenda.md") or (".prev-" in f.name and not include_prev):
+            continue
+        text = f.read_text(encoding="utf-8")
+        meta, body = {}, text
+        if text.startswith("---\n"):
+            head, _, body = text[4:].partition("\n---\n")
+            for ln in head.splitlines():
+                k, _, v = ln.partition(": ")
+                meta[k] = json.loads(v) if v and v[0] in '"n' else v
+        body = re.sub(r"^# .*\n+", "", body.strip())
+        prov = meta.get("provisions", f.stem)
+        m = re.match(r"제(\d+)조(?:의(\d+))?", prov)
+        key = (m.group(1) + (f"의{m.group(2)}" if m.group(2) else "")) if m else f.stem
+        label = prov + (f" [직전 판본, {meta.get('effective_from')}~{meta.get('effective_to')}]" if ".prev-" in f.name else "")
+        if meta.get("addenda_note"):
+            label += f" [{meta['addenda_note']}]"
+        arts.append({"no": key, "head": label, "body": body.strip(), "file": f"laws/{law_id}/{f.name}",
+                     "prev": ".prev-" in f.name})
+    arts.sort(key=lambda x: [int(n) for n in re.findall(r"\d+", x["no"])] + [x["prev"]])
     return arts
 
 
@@ -75,7 +91,7 @@ def norm_article(s: str) -> str:
 
 def cite(meta, art):
     return (f"━━ 「{meta['title']}」 {art['head']}\n"
-            f"   {meta['number']} · 시행 {meta['effective']} · 수집 {meta['collected']} · {meta['url']}")
+            f"   {meta['number']} · 시행 {meta['effective']} · 수집 {meta['collected']} · {meta['url']} · 파일 {art['file']}")
 
 
 def excerpt(body: str, words, full: bool) -> str:
@@ -107,6 +123,7 @@ def main(argv=None):
     ap.add_argument("--list", action="store_true", help="수록 규정 목록")
     ap.add_argument("--max", type=int, default=6, help="최대 결과 수 (기본 6)")
     ap.add_argument("--full", action="store_true", help="긴 조문도 전체 출력")
+    ap.add_argument("--prev", action="store_true", help="직전 판본 조문도 함께 (수록된 경우)")
     a = ap.parse_args(argv)
     try:
         index = load_index()
@@ -121,7 +138,7 @@ def main(argv=None):
             if not a.law:
                 raise LookupError_("--article 은 --law 와 함께 씁니다")
             key = norm_article(a.article)
-            hits = [x for x in load_articles(a.law) if x["no"] == key]
+            hits = [x for x in load_articles(a.law, a.prev) if x["no"] == key]
             if not hits:
                 raise LookupError_(f"{index[a.law]['title']}에 제{a.article}조가 수록되어 있지 않습니다")
             for art in hits:
@@ -133,7 +150,7 @@ def main(argv=None):
         laws = [a.law] if a.law else list(index)
         results = []
         for lid in laws:
-            for art in load_articles(lid):
+            for art in load_articles(lid, a.prev):
                 hay = art["head"] + "\n" + art["body"]
                 if all(any(v in hay for v in variants(w)) for w in a.words):
                     score = sum(hay.count(v) for w in a.words for v in variants(w))
