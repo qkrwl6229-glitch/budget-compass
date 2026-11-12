@@ -1,0 +1,20 @@
+{
+  "name": "budget-compass",
+  "interface": {
+    "displayName": "사업비 나침반"
+  },
+  "plugins": [
+    {
+      "name": "budget-compass",
+      "source": {
+        "source": "local",
+        "path": "./plugins/budget-compass"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
