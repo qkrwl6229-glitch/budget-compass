@@ -83,9 +83,32 @@ for f in sorted((SKILL / "references").glob("*.md")):
     if f"references/{f.name}" not in refs:
         err(f"references/{f.name} 이 SKILL.md 에서 연결되지 않음")
 
+laws_dir = SKILL / "laws"
+idx_path = laws_dir / "index.json"
+if not idx_path.is_file():
+    err("laws/index.json 없음")
+else:
+    idx = load_json(idx_path).get("laws", [])
+    ids = [x.get("id") for x in idx]
+    src_ids = [x["id"] for x in load_json(ROOT / "tools/law_sources.json").get("sources", [])]
+    if ids != src_ids:
+        err(f"laws/index.json 과 tools/law_sources.json 의 규정 목록이 다름")
+    for x in idx:
+        f = laws_dir / f"{x.get('id')}.md"
+        if not f.is_file():
+            err(f"laws/{x.get('id')}.md 없음")
+        for k in ("title", "number", "effective", "collected", "url", "articles"):
+            if not x.get(k):
+                err(f"laws/index.json {x.get('id')}: '{k}' 없음")
+    extra = {f.stem for f in laws_dir.glob("*.md")} - set(ids)
+    if extra:
+        err(f"index.json 에 없는 수록 파일: {sorted(extra)}")
+    if "scripts/lookup.py" not in refs:
+        err("SKILL.md 가 scripts/lookup.py 를 안내하지 않음")
+
 if errors:
     print("검사 실패:")
     for e in errors:
         print(" -", e)
     sys.exit(1)
-print(f"검사 통과: {m.get('name')} v{m.get('version')} (참조 파일 {len(refs)}개)")
+print(f"검사 통과: {m.get('name')} v{m.get('version')} (참조 파일 {len(refs)}개, 수록 규정 {len(idx) if idx_path.is_file() else 0}개)")

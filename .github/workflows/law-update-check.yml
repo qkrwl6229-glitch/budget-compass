@@ -1,0 +1,49 @@
+name: law-update-check
+
+on:
+  schedule:
+    - cron: "0 0 * * 1"   # 매주 월요일 09:00 (KST)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 수록 규정과 현행 판본 비교
+        id: check
+        run: |
+          set +e
+          python3 tools/fetch_laws.py --check > result.txt 2>&1
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+          cat result.txt
+      - name: 개정이 있으면 이슈 등록
+        if: steps.check.outputs.code == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TITLE="수록 규정 개정 감지 ($(date -u +%Y-%m-%d))"
+          if gh issue list --state open --label law-update --json title -q '.[].title' | grep -q .; then
+            echo "열린 개정 이슈가 이미 있음"; exit 0
+          fi
+          gh label create law-update --color FBCA04 --description "수록 규정 개정" 2>/dev/null || true
+          {
+            echo "국가법령정보센터 현행 판본이 수록본과 다릅니다."
+            echo
+            echo '```'
+            cat result.txt
+            echo '```'
+            echo
+            echo "갱신: \`python3 tools/fetch_laws.py\` 실행 후 변경된 조문이 references/ 의 설명과 맞는지 확인합니다."
+          } > body.md
+          gh issue create --title "$TITLE" --label law-update --body-file body.md
+      - name: 확인 실패
+        if: steps.check.outputs.code == '2'
+        run: exit 1

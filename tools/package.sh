@@ -18,7 +18,7 @@ EXCLUDES=('*/__pycache__/*' '*.DS_Store' '*.pyc')
 ( cd plugins/budget-compass && zip -qr -X "../../dist/budget-compass-plugin-v${VERSION}.zip" plugin.json skills assets -x "${EXCLUDES[@]}" )
 
 ENTRIES=$(unzip -Z1 "dist/budget-compass-plugin-v${VERSION}.zip")
-for need in plugin.json skills/budget-compass/SKILL.md skills/budget-compass/scripts/calc.py assets/icon.png; do
+for need in plugin.json skills/budget-compass/SKILL.md skills/budget-compass/scripts/calc.py skills/budget-compass/scripts/lookup.py skills/budget-compass/laws/index.json assets/icon.png; do
   grep -qx "$need" <<<"$ENTRIES" || { echo "플러그인 zip 에 $need 없음" >&2; exit 1; }
 done
 if grep -qE '__pycache__|\.DS_Store|\.pyc$' <<<"$ENTRIES"; then echo "불필요한 파일 포함" >&2; exit 1; fi
