@@ -50,22 +50,35 @@ evals/questions.md                      테스트 질문 37개 + 채점 기준
 tools/package.sh                        배포용 zip 생성
 ```
 
-## 설치
+## 설치 — 어디서 쓰느냐에 따라 방법이 다릅니다
 
-### ChatGPT
-1. 배포 zip 을 만듭니다 (또는 Releases 에서 받습니다).
-   ```bash
-   bash tools/package.sh
-   ```
-2. **플러그인으로 설치**: ChatGPT의 플러그인 화면에서 `dist/budget-compass-plugin-v0.2.0.zip` 을 업로드합니다.
-   **스킬만 설치**: 스킬 화면에서 `dist/budget-compass-skill-v0.2.0.zip` 을 업로드합니다.
-3. **웹 검색**과 **코드 실행**(계산기용)을 켜 둡니다. 웹 검색이 꺼져 있으면 답변 맨 앞에 최신 기준을 확인하지 못했다는 경고가 붙습니다.
+| 사용 환경 | 설치 방법 | GitHub 업데이트 자동 반영 |
+|---|---|---|
+| **ChatGPT 웹 (개인)** | zip 업로드 | ✕ (업로드한 시점의 스냅샷) |
+| **ChatGPT 데스크톱 앱 / Codex** | GitHub 저장소를 마켓플레이스로 추가 | 마켓플레이스 업그레이드 시 반영 |
+| **ChatGPT 워크스페이스 (관리자)** | 관리자 콘솔에서 GitHub 마켓플레이스 가져오기 | 매일 동기화 |
 
-> 메뉴 이름·위치와 Plus 요금제에서의 업로드 지원 여부는 바뀔 수 있습니다. 설치 화면이 보이지 않으면 현재 ChatGPT 도움말을 확인하세요.
+> ChatGPT 웹에 **GitHub 주소만 넣어 개인이 바로 설치하는 기능은 없습니다.** GitHub 연동은 데스크톱 앱·Codex 또는 워크스페이스 관리자용입니다.
+
+### ① ChatGPT 웹 (개인) — zip 업로드
+1. [Releases](https://github.com/qkrwl6229-glitch/budget-compass/releases/latest)에서 `budget-compass-plugin-v*.zip` 을 받습니다. (또는 저장소를 받아 `bash tools/package.sh` 실행 → `dist/`)
+2. [ChatGPT 플러그인](https://chatgpt.com/plugins) → **개인용(Personal)** → **추가** → **플러그인 압축 파일 업로드** 에서 zip 을 선택합니다.
+3. 등록된 플러그인의 상세 화면에서 **설치**합니다. (등록과 설치는 별도 단계입니다.)
+4. 새 채팅에서 플러그인을 선택(태그)하고 질문합니다. **웹 검색**과 **코드 실행**(계산기)이 켜져 있어야 제대로 동작합니다.
+
+> 새 버전이 나오면 새 zip 을 다시 업로드해야 합니다. Plus 요금제에서의 동작은 계정 설정에 따라 다를 수 있습니다.
+
+### ② ChatGPT 데스크톱 앱 / Codex — GitHub에서 바로 설치
+```bash
+codex plugin marketplace add qkrwl6229-glitch/budget-compass
+codex plugin add budget-compass@budget-compass
+```
+설치 후 ChatGPT 데스크톱 앱을 다시 시작하면 플러그인 디렉터리에 "사업비 나침반" 마켓플레이스가 보입니다. 저장소의 `.agents/plugins/marketplace.json` 을 사용합니다.
+
+### ③ 워크스페이스 관리자 — GitHub 마켓플레이스 동기화
+관리자 콘솔 → 플러그인 → 추가 → 마켓플레이스 가져오기에서 이 저장소를 연결하면 매일 동기화됩니다. ([OpenAI 안내](https://help.openai.com/en/articles/20001504-importing-and-syncing-plugin-marketplaces-from-github))
+
 > 패키지 형식은 OpenAI [플러그인 패키징 문서](https://developers.openai.com/plugins/build/plugins)의 포터블 구조(루트 `plugin.json` + `skills/` + `assets/`)를 따릅니다.
-
-### Codex
-이 저장소의 `.agents/plugins/marketplace.json` 으로 로컬 마켓플레이스에 추가할 수 있습니다.
 
 ### 그 밖의 에이전트
 `plugins/budget-compass/skills/budget-compass/` 는 Agent Skills 형식(SKILL.md + references)이라 Claude 등 다른 에이전트에서도 쓸 수 있습니다.
