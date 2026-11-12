@@ -11,7 +11,8 @@ rm -f dist/budget-compass-*-v"${VERSION}".zip
 
 # 2) 플러그인 zip — ChatGPT 개인용 업로드에서 설치가 확인된 형식: zip 루트에 plugin.json, skills/, assets/
 ( cd plugins/budget-compass && zip -qr -X "../../dist/budget-compass-plugin-v${VERSION}.zip" plugin.json skills assets -x '*/__pycache__/*' '*.DS_Store' )
-unzip -l "dist/budget-compass-plugin-v${VERSION}.zip" | grep -q ' plugin.json$' || { echo "plugin.json 이 zip 루트에 없음" >&2; exit 1; }
+ENTRIES=$(unzip -Z1 "dist/budget-compass-plugin-v${VERSION}.zip")
+grep -qx 'plugin.json' <<<"$ENTRIES" || { echo "plugin.json 이 zip 루트에 없음" >&2; exit 1; }
 
 for z in dist/*-v"${VERSION}".zip; do unzip -tq "$z"; done
 ls -l dist
